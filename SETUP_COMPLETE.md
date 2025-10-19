@@ -11,7 +11,9 @@
 ## 📦 What Has Been Implemented
 
 ### 1. **Core Payment Models** ✅
+
 - **Payment Model** (`listings/models.py`)
+
   - Tracks payment transactions with Chapa
   - Fields: `booking_reference`, `transaction_id`, `amount`, `status`, `email`, etc.
   - Status tracking: Pending, Completed, Failed, Refunded
@@ -23,6 +25,7 @@
   - Linked with Payment model
 
 ### 2. **Chapa API Integration** ✅
+
 - **Chapa Gateway Module** (`listings/chapa.py`)
   - `ChapaPaymentGateway` class for API communication
   - `initialize_payment()` - Creates payment transaction
@@ -31,15 +34,19 @@
   - Timeout protection (30 seconds)
 
 ### 3. **RESTful API Endpoints** ✅
+
 - **Payment Initiation**
+
   - `POST /api/payments/initiate-payment/`
   - Creates payment record and returns Chapa checkout URL
 
 - **Payment Verification**
+
   - `GET /api/payments/verify-payment/<reference>/`
   - Verifies transaction with Chapa and updates status
 
 - **Payment Status**
+
   - `GET /api/payments/status/<reference>/`
   - Returns current payment status
 
@@ -48,7 +55,9 @@
   - Full CRUD operations via ViewSet
 
 ### 4. **Asynchronous Email System** ✅
+
 - **Celery Configuration** (`alx_travel_app/celery.py`)
+
   - Redis as message broker
   - Async task processing
 
@@ -60,7 +69,9 @@
   - Automatic retry on failure (max 3 attempts)
 
 ### 5. **Configuration & Settings** ✅
+
 - **Environment Variables** (`.env`)
+
   - Chapa API credentials (SECRET_KEY, PUBLIC_KEY)
   - Email configuration (SMTP settings)
   - Celery/Redis configuration
@@ -75,12 +86,14 @@
   - REST Framework configuration
 
 ### 6. **Serializers & Validation** ✅
+
 - **PaymentSerializer** - Full payment data serialization
 - **PaymentInitiateSerializer** - Request validation
 - **PaymentVerifySerializer** - Response validation
 - Comprehensive field validation (amount, email, dates)
 
 ### 7. **Admin Interface** ✅
+
 - **Django Admin** (`listings/admin.py`)
   - Payment management interface
   - Booking status tracking
@@ -88,7 +101,9 @@
   - Readonly fields for security
 
 ### 8. **Documentation** ✅
+
 - **README.md** - Complete setup guide with:
+
   - Installation instructions
   - API endpoint documentation
   - Payment workflow diagram
@@ -103,6 +118,7 @@
   - Celery task testing
 
 ### 9. **Dependencies** ✅
+
 - **requirements.txt** includes:
   - Django 4.2.7
   - Django REST Framework 3.14.0
@@ -196,6 +212,7 @@ GET /api/payments/verify-payment/<reference>/
 ## 🧪 Testing Checklist
 
 ### Prerequisites Tests
+
 - [ ] Django server starts without errors
 - [ ] Redis server is running
 - [ ] Celery worker connects successfully
@@ -203,6 +220,7 @@ GET /api/payments/verify-payment/<reference>/
 - [ ] Database migrations applied
 
 ### Payment Initiation Tests
+
 - [ ] POST /initiate-payment/ with valid data → 200 OK
 - [ ] Payment record created in database
 - [ ] Checkout URL returned
@@ -211,18 +229,21 @@ GET /api/payments/verify-payment/<reference>/
 - [ ] Missing required fields → 400 Bad Request
 
 ### Payment Verification Tests
+
 - [ ] Successful payment verification → Status: Completed
 - [ ] Failed payment verification → Status: Failed
 - [ ] Booking status updates correctly
 - [ ] Non-existent transaction → 404 Not Found
 
 ### Email Tests
+
 - [ ] Confirmation email queued in Celery
 - [ ] Email task executes successfully
 - [ ] Email content is correct
 - [ ] Retry on failure works
 
 ### Database Tests
+
 - [ ] Payment records persist correctly
 - [ ] Status updates are atomic
 - [ ] Booking relationships maintained
@@ -233,6 +254,7 @@ GET /api/payments/verify-payment/<reference>/
 ## 🚀 Next Steps to Deploy
 
 ### 1. Database Setup
+
 ```bash
 cd alx_travel_app
 python manage.py makemigrations
@@ -241,16 +263,19 @@ python manage.py createsuperuser
 ```
 
 ### 2. Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 3. Configure Environment
+
 - Edit `.env` file with your Chapa API credentials
 - Update email settings for production
 - Configure Redis connection
 
 ### 4. Start Services
+
 ```bash
 # Terminal 1: Django
 python manage.py runserver
@@ -263,11 +288,13 @@ celery -A alx_travel_app worker --loglevel=info
 ```
 
 ### 5. Test Endpoints
+
 - Use Postman or cURL to test payment endpoints
 - Follow API_TESTING_GUIDE.md for scenarios
 - Document test results
 
 ### 6. Commit to GitHub
+
 ```bash
 git add .
 git commit -m "feat: Implement Chapa payment integration with async emails"
@@ -281,6 +308,7 @@ git push -u origin main
 ## 🔐 Security Considerations
 
 ✅ **Implemented:**
+
 - API keys in environment variables
 - .env file excluded from Git
 - Readonly admin fields for sensitive data
@@ -289,6 +317,7 @@ git push -u origin main
 - Transaction logging
 
 ⚠️ **Recommended for Production:**
+
 - Enable HTTPS only
 - Add rate limiting (django-ratelimit)
 - Implement webhook signature verification
@@ -302,23 +331,24 @@ git push -u origin main
 
 ## 📊 Key Features Summary
 
-| Feature | Status | Description |
-|---------|--------|-------------|
-| Payment Initiation | ✅ | Creates transaction and returns checkout URL |
-| Payment Verification | ✅ | Verifies with Chapa and updates status |
-| Async Email | ✅ | Celery-based confirmation emails |
-| Error Handling | ✅ | Comprehensive try-catch with logging |
-| Status Tracking | ✅ | Pending → Completed/Failed workflow |
-| Database Models | ✅ | Payment, Booking with relationships |
-| API Documentation | ✅ | README + API Testing Guide |
-| Admin Interface | ✅ | Django admin for payment management |
-| Environment Config | ✅ | python-dotenv for secure config |
+| Feature              | Status | Description                                  |
+| -------------------- | ------ | -------------------------------------------- |
+| Payment Initiation   | ✅     | Creates transaction and returns checkout URL |
+| Payment Verification | ✅     | Verifies with Chapa and updates status       |
+| Async Email          | ✅     | Celery-based confirmation emails             |
+| Error Handling       | ✅     | Comprehensive try-catch with logging         |
+| Status Tracking      | ✅     | Pending → Completed/Failed workflow          |
+| Database Models      | ✅     | Payment, Booking with relationships          |
+| API Documentation    | ✅     | README + API Testing Guide                   |
+| Admin Interface      | ✅     | Django admin for payment management          |
+| Environment Config   | ✅     | python-dotenv for secure config              |
 
 ---
 
 ## 📝 Files Created/Modified
 
 ### New Files (16):
+
 1. `alx_travel_app/settings.py` - Django configuration
 2. `alx_travel_app/celery.py` - Celery setup
 3. `alx_travel_app/urls.py` - URL routing
@@ -337,6 +367,7 @@ git push -u origin main
 16. `API_TESTING_GUIDE.md` - Testing docs
 
 ### Updated Files (1):
+
 1. `README.md` - Comprehensive documentation
 
 ---
@@ -346,22 +377,25 @@ git push -u origin main
 ✅ **GitHub repo:** alx_travel_app_0x02 (initialized)  
 ✅ **Directory:** alx_travel_app  
 ✅ **Updated files:**
-   - listings/models.py (Payment model added)
-   - listings/views.py (Payment endpoints added)
-   - README.md (Milestone 4 documentation)
+
+- listings/models.py (Payment model added)
+- listings/views.py (Payment endpoints added)
+- README.md (Milestone 4 documentation)
 
 ✅ **Additional deliverables:**
-   - listings/chapa.py (Chapa API integration)
-   - listings/tasks.py (Celery email tasks)
-   - alx_travel_app/settings.py (Environment configuration)
-   - requirements.txt (All dependencies)
-   - API_TESTING_GUIDE.md (Testing documentation)
+
+- listings/chapa.py (Chapa API integration)
+- listings/tasks.py (Celery email tasks)
+- alx_travel_app/settings.py (Environment configuration)
+- requirements.txt (All dependencies)
+- API_TESTING_GUIDE.md (Testing documentation)
 
 ---
 
 ## 💡 Usage Example
 
 ### Initiate Payment
+
 ```bash
 curl -X POST http://localhost:8000/api/payments/initiate-payment/ \
   -H "Content-Type: application/json" \
@@ -377,6 +411,7 @@ curl -X POST http://localhost:8000/api/payments/initiate-payment/ \
 ```
 
 ### Verify Payment
+
 ```bash
 curl http://localhost:8000/api/payments/verify-payment/TX-ABC123/
 ```
