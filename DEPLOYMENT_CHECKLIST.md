@@ -5,6 +5,7 @@ Use this checklist before pushing to production.
 ## Pre-Deployment Checklist
 
 ### Security
+
 - [ ] Update `SECRET_KEY` in `.env` with a strong, random value
 - [ ] Set `DEBUG=False` in production `.env`
 - [ ] Update `ALLOWED_HOSTS` with your domain(s)
@@ -16,6 +17,7 @@ Use this checklist before pushing to production.
 - [ ] Enable Django security middleware settings
 
 ### Database
+
 - [ ] Migrate from SQLite to PostgreSQL (recommended)
 - [ ] Run `python manage.py makemigrations --check`
 - [ ] Run `python manage.py migrate`
@@ -23,6 +25,7 @@ Use this checklist before pushing to production.
 - [ ] Set up database connection pooling
 
 ### Email Configuration
+
 - [ ] Configure production email service (SendGrid, Mailgun, AWS SES)
 - [ ] Update `EMAIL_BACKEND` in settings
 - [ ] Verify email templates
@@ -30,6 +33,7 @@ Use this checklist before pushing to production.
 - [ ] Set up SPF, DKIM, DMARC records
 
 ### Celery & Redis
+
 - [ ] Use production Redis instance (not localhost)
 - [ ] Configure Redis password authentication
 - [ ] Set up Redis persistence
@@ -38,12 +42,14 @@ Use this checklist before pushing to production.
 - [ ] Monitor Celery worker health
 
 ### Static & Media Files
+
 - [ ] Run `python manage.py collectstatic`
 - [ ] Configure S3/CloudFront for static files (optional)
 - [ ] Set up media file storage (S3 recommended)
 - [ ] Configure proper CORS for media files
 
 ### Testing
+
 - [ ] Run all unit tests: `python manage.py test`
 - [ ] Test payment initiation flow
 - [ ] Test payment verification (success & failure)
@@ -53,6 +59,7 @@ Use this checklist before pushing to production.
 - [ ] Verify Celery tasks execute correctly
 
 ### Monitoring & Logging
+
 - [ ] Set up error tracking (Sentry, Rollbar)
 - [ ] Configure application logging
 - [ ] Set up server monitoring (DataDog, New Relic)
@@ -61,6 +68,7 @@ Use this checklist before pushing to production.
 - [ ] Configure alerts for failed payments
 
 ### Performance
+
 - [ ] Enable Django caching (Redis/Memcached)
 - [ ] Add database indexes (already done in models)
 - [ ] Enable gzip compression
@@ -69,6 +77,7 @@ Use this checklist before pushing to production.
 - [ ] Set up connection pooling
 
 ### Documentation
+
 - [ ] Update README with production setup
 - [ ] Document API endpoints (Swagger/OpenAPI optional)
 - [ ] Create deployment runbook
@@ -111,6 +120,7 @@ SENTRY_DSN=<sentry-dsn-url>
 ## Deployment Platforms
 
 ### Option 1: Heroku
+
 ```bash
 # Install Heroku CLI
 heroku login
@@ -124,6 +134,7 @@ heroku run python manage.py migrate
 ```
 
 ### Option 2: DigitalOcean App Platform
+
 1. Connect GitHub repository
 2. Configure environment variables
 3. Add PostgreSQL database
@@ -131,6 +142,7 @@ heroku run python manage.py migrate
 5. Deploy
 
 ### Option 3: AWS (EC2 + RDS + ElastiCache)
+
 1. Launch EC2 instance (Ubuntu 20.04+)
 2. Set up RDS PostgreSQL
 3. Set up ElastiCache Redis
@@ -140,6 +152,7 @@ heroku run python manage.py migrate
 7. Set up supervisor for Celery
 
 ### Option 4: Docker
+
 ```dockerfile
 # Use provided Dockerfile (create if needed)
 docker build -t alx-travel-app .
@@ -170,6 +183,7 @@ If issues occur:
 ## Maintenance Windows
 
 Schedule regular maintenance:
+
 - Database backups: Daily
 - Security updates: Weekly
 - Dependency updates: Monthly
