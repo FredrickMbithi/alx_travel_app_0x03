@@ -1,0 +1,27 @@
+# Django and Django REST Framework
+Django==4.2.7
+djangorestframework==3.14.0
+django-filter==23.3
+django-cors-headers==4.3.0
+
+# Environment variables
+python-dotenv==1.0.0
+
+# HTTP requests
+requests==2.31.0
+
+# Database
+psycopg2-binary==2.9.9
+
+# Celery for async tasks
+celery==5.3.4
+redis==5.0.1
+
+# Email
+django-celery-email==3.0.0
+
+# Development tools
+ipython==8.17.2
+
+# Security
+cryptography==41.0.7

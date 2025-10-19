@@ -1,0 +1,13 @@
+.env
+*.pyc
+__pycache__/
+*.sqlite3
+db.sqlite3
+venv/
+env/
+.vscode/
+.idea/
+*.log
+celerybeat-schedule
+media/
+staticfiles/
