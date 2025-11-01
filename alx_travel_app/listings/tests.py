@@ -2,6 +2,7 @@ from django.test import TestCase
 from unittest.mock import patch, MagicMock
 from django.contrib.auth.models import User
 from .models import Listing, Booking
+from datetime import date
 from .views import BookingViewSet
 
 class BookingViewSetTaskTest(TestCase):
@@ -20,8 +21,8 @@ class BookingViewSetTaskTest(TestCase):
         booking = Booking.objects.create(
             user=self.user,
             listing=self.listing,
-            start_date='2025-12-01',
-            end_date='2025-12-03',
+            start_date=date(2025, 12, 1),
+            end_date=date(2025, 12, 3),
             status='Confirmed'
         )
 
