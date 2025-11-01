@@ -50,7 +50,7 @@ pip install -r requirements.txt
 
 ### 4. Configure Environment Variables
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root (example values):
 
 ```env
 # Django Settings
@@ -71,9 +71,10 @@ EMAIL_USE_TLS=True
 EMAIL_HOST_USER=your-email@gmail.com
 EMAIL_HOST_PASSWORD=your-email-password
 
-# Celery Configuration
-CELERY_BROKER_URL=redis://localhost:6379/0
-CELERY_RESULT_BACKEND=redis://localhost:6379/0
+# Celery / Broker (RabbitMQ) Configuration
+# Using RabbitMQ (recommended for this project)
+CELERY_BROKER_URL=amqp://guest:guest@localhost:5672//
+CELERY_RESULT_BACKEND=rpc://
 ```
 
 ### 5. Get Chapa API Credentials
@@ -98,19 +99,35 @@ python manage.py createsuperuser
 python manage.py seed
 ```
 
-### 8. Start Redis Server
+### 8. Start message broker (RabbitMQ)
+
+This project uses RabbitMQ as the Celery broker by default. Start RabbitMQ using the system package or Docker.
 
 ```bash
-# On Linux/Mac
-redis-server
+# System (Ubuntu/Debian)
+sudo systemctl start rabbitmq-server
+sudo systemctl enable rabbitmq-server
 
-# On Windows (if installed via WSL or native)
-redis-server.exe
+# Docker (recommended for portability)
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+
+# On Mac with Homebrew
+# brew services start rabbitmq
 ```
 
 ### 9. Start Celery Worker
 
+Start a Celery worker from the `alx_travel_app` package directory. For development you can use the console email backend so emails are printed to the worker log instead of being sent.
+
 ```bash
+# From the project package directory
+cd alx_travel_app
+source ../venv/bin/activate
+
+# Development (prints emails to Celery stdout)
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend celery -A alx_travel_app worker --loglevel=info
+
+# Production (use credentials in .env and a real email backend)
 celery -A alx_travel_app worker --loglevel=info
 ```
 
