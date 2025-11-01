@@ -143,10 +143,102 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
-# Celery Configuration
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+# ============================================
+# CELERY CONFIGURATION
+# ============================================
+
+# Celery Broker Settings (RabbitMQ)
+CELERY_BROKER_URL = os.getenv(
+    'CELERY_BROKER_URL', 
+    'amqp://guest:guest@localhost:5672//'  # Default RabbitMQ connection
+)
+
+# Celery Result Backend (optional - stores task results)
+# You can use RabbitMQ or Redis for this
+CELERY_RESULT_BACKEND = os.getenv(
+    'CELERY_RESULT_BACKEND',
+    'rpc://'  # Using RabbitMQ RPC backend
+)
+
+# Celery accepts content types
 CELERY_ACCEPT_CONTENT = ['json']
+
+# Task serialization format
 CELERY_TASK_SERIALIZER = 'json'
+
+# Result serialization format
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
+
+# Timezone for Celery (should match Django timezone)
+CELERY_TIMEZONE = TIME_ZONE  # Uses your Django TIME_ZONE setting
+
+# Enable UTC
+CELERY_ENABLE_UTC = True
+
+# Task result expires after 1 hour (optional)
+CELERY_RESULT_EXPIRES = 3600
+
+# Task tracking (track if task has been started)
+CELERY_TASK_TRACK_STARTED = True
+
+# Task time limit (10 minutes)
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+
+# Task soft time limit (gives task time to clean up)
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes
+
+# Maximum retries for failed tasks
+CELERY_TASK_MAX_RETRIES = 3
+
+# Retry delay (seconds)
+CELERY_TASK_DEFAULT_RETRY_DELAY = 60
+
+# Ignore result for tasks that don't need it (saves memory)
+CELERY_TASK_IGNORE_RESULT = False
+
+# Log level
+CELERY_WORKER_LOG_LEVEL = 'INFO'
+
+# Concurrency (number of worker processes)
+# Default is number of CPU cores
+CELERY_WORKER_CONCURRENCY = 4
+
+# Prefetch multiplier (how many tasks each worker prefetches)
+CELERY_WORKER_PREFETCH_MULTIPLIER = 4
+
+# ============================================
+# EMAIL CONFIGURATION (for sending emails)
+# ============================================
+
+# Email backend
+EMAIL_BACKEND = os.getenv(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.smtp.EmailBackend'  # Use SMTP
+)
+
+# For development, you can use console backend to see emails in terminal
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# SMTP Configuration (Gmail example)
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@travelapp.com')
+
+# Email timeout
+EMAIL_TIMEOUT = 10
+
+# ============================================
+# CELERY BEAT SCHEDULE (Optional - for periodic tasks)
+# ============================================
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    # Example: Cleanup old bookings every day at 2 AM
+    'cleanup-old-bookings': {
+        'task': 'listings.tasks.cleanup_old_bookings',
+        'schedule': crontab(hour=2, minute=0),
+    },
+}

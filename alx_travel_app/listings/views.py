@@ -25,7 +25,7 @@ from .serializers import (
     PaymentVerifySerializer
 )
 from .chapa import initialize_chapa_payment, verify_chapa_payment
-from .tasks import send_payment_confirmation_email
+from .tasks import send_payment_confirmation_email, send_booking_confirmation_email
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +53,20 @@ class BookingViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['listing', 'user', 'status']
     ordering_fields = ['created_at', 'start_date']
+
+    def perform_create(self, serializer):
+        """
+        Override to trigger an asynchronous booking confirmation email
+        after the booking is created.
+        """
+        booking = serializer.save()
+
+        # Queue background task to send booking confirmation email
+        try:
+            # if booking has a UUID primary key, convert to str for safety
+            send_booking_confirmation_email.delay(str(booking.id))
+        except Exception as e:
+            logger.error(f"Failed to queue booking confirmation email for booking {booking.id}: {e}")
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

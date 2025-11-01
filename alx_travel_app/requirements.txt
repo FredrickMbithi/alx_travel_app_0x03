@@ -1,27 +1,19 @@
-# Django and Django REST Framework
+# Existing dependencies...
 Django==4.2.7
 djangorestframework==3.14.0
 django-filter==23.3
 django-cors-headers==4.3.0
-
-# Environment variables
 python-dotenv==1.0.0
-
-# HTTP requests
+psycopg2-binary==2.9.11
 requests==2.31.0
-
-# Database
-psycopg2-binary==2.9.9
-
-# Celery for async tasks
-celery==5.3.4
-redis==5.0.1
-
-# Email
-django-celery-email==3.0.0
-
-# Development tools
-ipython==8.17.2
-
-# Security
 cryptography==41.0.7
+ipython==8.18.1
+
+# Celery and RabbitMQ dependencies
+celery==5.3.4
+amqp==5.2.0          # RabbitMQ protocol
+kombu==5.3.4         # Celery messaging library
+
+# Email support
+django-celery-email==3.0.0  # Optional but recommended
+

@@ -1,221 +1,247 @@
-#!/usr/bin/env python3
 """
 Celery tasks for the listings app.
-Handles asynchronous email notifications and other background tasks.
+
+These tasks run asynchronously in the background via Celery workers.
 """
 
-import logging
 from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils import timezone
+import logging
 
 logger = logging.getLogger(__name__)
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def send_payment_confirmation_email(
-    self,
-    email: str,
-    first_name: str,
-    amount: float,
-    transaction_reference: str,
-    booking_id: str = None
-):
+@shared_task(bind=True, max_retries=3)
+def send_booking_confirmation_email(self, booking_id):
     """
-    Send payment confirmation email to customer.
+    Send booking confirmation email to guest.
     
     Args:
-        email: Customer email address
-        first_name: Customer first name
-        amount: Payment amount
-        transaction_reference: Transaction reference number
-        booking_id: Optional booking ID
+        booking_id: ID of the booking
+    
+    Returns:
+        str: Success message
+    
+    This task:
+    1. Fetches booking details from database
+    2. Composes email with booking information
+    3. Sends email asynchronously
+    4. Retries up to 3 times if it fails
     """
     try:
-        subject = f"Payment Confirmation - {transaction_reference}"
+        # Import here to avoid circular imports
+        from .models import Booking
         
-        # Create email body
+        # Fetch booking. Use select_related to bring in listing and user
+        try:
+            booking = Booking.objects.select_related('listing', 'user').get(id=booking_id)
+        except Booking.DoesNotExist:
+            logger.error(f"Booking {booking_id} not found")
+            return f"Booking {booking_id} not found"
+
+        # Calculate nights using model fields
+        try:
+            nights = (booking.end_date - booking.start_date).days
+        except Exception:
+            nights = None
+
+        # Guest info (fall back to user.username/email if available)
+        guest_name = getattr(booking.user, 'get_full_name', None)
+        if callable(guest_name):
+            guest_name = booking.user.get_full_name() or booking.user.username
+        else:
+            guest_name = getattr(booking.user, 'username', 'Guest')
+
+        guest_email = getattr(booking.user, 'email', None)
+        if not guest_email:
+            # No user email available, can't send
+            logger.error(f"Booking {booking_id} has no associated user email")
+            return f"No recipient email for booking {booking_id}"
+
+        # Compose email subject
+        subject = f'Booking Confirmation - {booking.listing.title}'
+
+        # Compose email message using available fields
         message = f"""
-Dear {first_name},
+Dear {guest_name},
 
-Thank you for your payment!
+Thank you for your booking! We're excited to host you.
 
-Payment Details:
-- Transaction Reference: {transaction_reference}
-- Amount: ETB {amount:.2f}
-- Status: Completed
-"""
-        
-        if booking_id:
-            message += f"- Booking ID: {booking_id}\n"
-        
-        message += """
+📋 BOOKING DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Booking ID:       #{booking.id}
+Property:         {booking.listing.title}
+Location:         {booking.listing.location}
 
-Your payment has been successfully processed. You will receive a booking confirmation shortly.
+Check-in:         {booking.start_date.strftime('%B %d, %Y') if booking.start_date else 'TBA'}
+Check-out:        {booking.end_date.strftime('%B %d, %Y') if booking.end_date else 'TBA'}
+Duration:         {f"{nights} night{'s' if nights and nights != 1 else ''}" if nights is not None else 'TBA'}
 
-If you have any questions, please contact our support team.
+Price per night:  ${booking.listing.price_per_night}
+Total Amount:     ${booking.total_price if booking.total_price is not None else 'TBA'}
+Status:           {booking.status}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📍 Property Address:
+{booking.listing.location}
+
+📞 Need Help?
+If you have any questions, please contact us at support@travelapp.com
+
+We look forward to welcoming you!
 
 Best regards,
-ALX Travel App Team
-"""
-        
+The Travel App Team
+
+---
+This is an automated message. Please do not reply to this email.
+Booking created on: {booking.created_at.strftime('%B %d, %Y at %I:%M %p')}
+        """.strip()
+
         # Send email
         send_mail(
             subject=subject,
             message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL or settings.EMAIL_HOST_USER,
-            recipient_list=[email],
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[guest_email],
             fail_silently=False,
         )
-        
-        logger.info(f"Payment confirmation email sent to {email}")
-        return {"status": "success", "email": email}
-        
-    except Exception as exc:
-        logger.error(f"Failed to send confirmation email: {str(exc)}")
-        # Retry the task
-        raise self.retry(exc=exc)
 
-
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def send_booking_confirmation_email(
-    self,
-    email: str,
-    first_name: str,
-    booking_id: str,
-    listing_title: str,
-    start_date: str,
-    end_date: str,
-    total_price: float
-):
-    """
-    Send booking confirmation email to customer.
+        logger.info(f"Booking confirmation email sent to {guest_email} for booking #{booking_id}")
+        return f"Email sent successfully to {guest_email}"
     
-    Args:
-        email: Customer email address
-        first_name: Customer first name
-        booking_id: Booking reference ID
-        listing_title: Property title
-        start_date: Check-in date
-        end_date: Check-out date
-        total_price: Total booking price
-    """
-    try:
-        subject = f"Booking Confirmation - {booking_id}"
-        
-        message = f"""
-Dear {first_name},
-
-Your booking has been confirmed!
-
-Booking Details:
-- Booking Reference: {booking_id}
-- Property: {listing_title}
-- Check-in: {start_date}
-- Check-out: {end_date}
-- Total Amount: ETB {total_price:.2f}
-
-We look forward to hosting you!
-
-Best regards,
-ALX Travel App Team
-"""
-        
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL or settings.EMAIL_HOST_USER,
-            recipient_list=[email],
-            fail_silently=False,
-        )
-        
-        logger.info(f"Booking confirmation email sent to {email}")
-        return {"status": "success", "email": email}
-        
     except Exception as exc:
+        # Log the error
         logger.error(f"Failed to send booking confirmation email: {str(exc)}")
-        raise self.retry(exc=exc)
-
-
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def send_payment_failure_notification(
-    self,
-    email: str,
-    first_name: str,
-    transaction_reference: str,
-    amount: float
-):
-    """
-    Send payment failure notification to customer.
-    
-    Args:
-        email: Customer email address
-        first_name: Customer first name
-        transaction_reference: Transaction reference number
-        amount: Payment amount
-    """
-    try:
-        subject = f"Payment Failed - {transaction_reference}"
         
-        message = f"""
-Dear {first_name},
-
-We're sorry, but your payment could not be processed.
-
-Payment Details:
-- Transaction Reference: {transaction_reference}
-- Amount: ETB {amount:.2f}
-- Status: Failed
-
-Please try again or contact our support team for assistance.
-
-Best regards,
-ALX Travel App Team
-"""
-        
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL or settings.EMAIL_HOST_USER,
-            recipient_list=[email],
-            fail_silently=False,
-        )
-        
-        logger.info(f"Payment failure notification sent to {email}")
-        return {"status": "success", "email": email}
-        
-    except Exception as exc:
-        logger.error(f"Failed to send payment failure notification: {str(exc)}")
-        raise self.retry(exc=exc)
+        # Retry the task (exponential backoff)
+        # Retry after 60 seconds, then 120, then 180
+        retry_delay = 60 * (self.request.retries + 1)
+        raise self.retry(exc=exc, countdown=retry_delay)
 
 
 @shared_task
-def cleanup_pending_payments():
+def send_booking_cancellation_email(booking_id):
     """
-    Periodic task to cleanup old pending payments.
-    Should be run via Celery Beat scheduler.
-    """
-    from datetime import timedelta
-    from django.utils import timezone
-    from .models import Payment
+    Send booking cancellation notification.
     
+    Args:
+        booking_id: ID of the cancelled booking
+    """
     try:
-        # Find payments pending for more than 24 hours
-        cutoff_time = timezone.now() - timedelta(hours=24)
-        old_pending_payments = Payment.objects.filter(
-            status='Pending',
-            created_at__lt=cutoff_time
+        from .models import Booking
+        
+        booking = Booking.objects.select_related('listing').get(id=booking_id)
+        
+        subject = f'Booking Cancelled - {booking.listing.title}'
+        message = f"""
+Dear {booking.guest_name},
+
+Your booking has been cancelled.
+
+Booking ID: #{booking.id}
+Property: {booking.listing.title}
+Check-in: {booking.check_in.strftime('%B %d, %Y')}
+Check-out: {booking.check_out.strftime('%B %d, %Y')}
+
+If you did not request this cancellation, please contact us immediately.
+
+Best regards,
+The Travel App Team
+        """.strip()
+        
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[booking.guest_email],
+            fail_silently=False,
         )
         
-        count = old_pending_payments.count()
+        logger.info(f"Cancellation email sent for booking #{booking_id}")
+        return f"Cancellation email sent to {booking.guest_email}"
+    
+    except Exception as e:
+        logger.error(f"Failed to send cancellation email: {str(e)}")
+        raise
+
+
+@shared_task
+def cleanup_old_bookings():
+    """
+    Periodic task to clean up old completed bookings.
+    This can be scheduled with Celery Beat.
+    """
+    try:
+        from .models import Booking
+        from datetime import timedelta
         
-        # Mark as failed
-        old_pending_payments.update(status='Failed')
+        # Delete bookings older than 1 year and completed
+        cutoff_date = timezone.now() - timedelta(days=365)
+        old_bookings = Booking.objects.filter(
+            status='Completed',
+            created_at__lt=cutoff_date
+        )
         
-        logger.info(f"Cleaned up {count} old pending payments")
-        return {"status": "success", "count": count}
+        count = old_bookings.count()
+        old_bookings.delete()
         
+        logger.info(f"Cleaned up {count} old bookings")
+        return f"Deleted {count} old bookings"
+    
+    except Exception as e:
+        logger.error(f"Failed to cleanup old bookings: {str(e)}")
+        raise
+
+
+@shared_task(bind=True)
+def test_celery_task(self):
+    """
+    Simple test task to verify Celery is working.
+    Usage: from listings.tasks import test_celery_task
+           test_celery_task.delay()
+    """
+    logger.info("Test task executed successfully!")
+    return "Celery is working! ✓"
+
+
+@shared_task
+def send_payment_confirmation_email(email: str, first_name: str, amount: float, transaction_reference: str, booking_id: str = None):
+    """
+    Send a payment confirmation email. This is a simple wrapper task used by
+    the payment verification flow. It accepts primitive args so it can be
+    queued reliably from views.
+    """
+    try:
+        subject = f'Payment Confirmation - {transaction_reference}'
+        message = f"""
+Dear {first_name},
+
+Thank you for your payment.
+
+Transaction Reference: {transaction_reference}
+Amount: {amount}
+
+If this payment corresponds to a booking (ID: {booking_id}), your booking
+will be updated shortly.
+
+Best regards,
+The Travel App Team
+        """.strip()
+
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+
+        logger.info(f"Payment confirmation email sent to {email} for tx {transaction_reference}")
+        return f"Payment email sent to {email}"
     except Exception as exc:
-        logger.error(f"Failed to cleanup pending payments: {str(exc)}")
-        return {"status": "error", "message": str(exc)}
+        logger.error(f"Failed to send payment confirmation email: {exc}")
+        raise
