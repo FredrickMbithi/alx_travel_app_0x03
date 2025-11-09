@@ -1,19 +1,17 @@
-# Existing dependencies...
-Django==4.2.7
+Django>=4.2,<5.0
 djangorestframework==3.14.0
-django-filter==23.3
-django-cors-headers==4.3.0
+django-filter==23.2
+django-cors-headers==4.0.0
+psycopg2-binary==2.9.11  # 2.9.9 fails on Python 3.13; 2.9.11 adds compatibility
+dj-database-url==2.1.0
+celery==5.3.1
+redis==5.0.0
+amqp==5.1.1
+kombu==5.3.2
 python-dotenv==1.0.0
-psycopg2-binary==2.9.11
+cryptography==41.0.3
 requests==2.31.0
-cryptography==41.0.7
-ipython==8.18.1
-
-# Celery and RabbitMQ dependencies
-celery==5.3.4
-amqp==5.2.0          # RabbitMQ protocol
-kombu==5.3.4         # Celery messaging library
-
-# Email support
-django-celery-email==3.0.0  # Optional but recommended
+drf-yasg==1.21.7
+gunicorn==21.2.0
+whitenoise==6.5.0
 
