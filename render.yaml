@@ -1,0 +1,82 @@
+services:
+  - type: web
+    name: alx-travel-app-web
+    env: python
+    plan: starter
+    buildCommand: pip install -r alx_travel_app/requirements.txt && python alx_travel_app/manage.py collectstatic --noinput
+    startCommand: gunicorn alx_travel_app.wsgi --log-file -
+    autoDeploy: true
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: alx_travel_app.settings
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: alx-travel-app-web.onrender.com
+      - key: DATABASE_URL
+        fromDatabase: alx-travel-db
+      - key: CHAPA_SECRET_KEY
+        sync: false
+      - key: CHAPA_PUBLIC_KEY
+        sync: false
+      - key: CHAPA_BASE_URL
+        value: https://api.chapa.co/v1
+      - key: CELERY_BROKER_URL
+        sync: false
+      - key: CELERY_RESULT_BACKEND
+        value: rpc://
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        value: smtp.sendgrid.net
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        value: noreply@travelapp.com
+
+  - type: worker
+    name: alx-travel-app-celery
+    env: python
+    plan: starter
+    buildCommand: pip install -r alx_travel_app/requirements.txt
+    startCommand: celery -A alx_travel_app worker --loglevel=info
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: alx_travel_app.settings
+      - key: SECRET_KEY
+        sync: false
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase: alx-travel-db
+      - key: CELERY_BROKER_URL
+        sync: false
+      - key: CELERY_RESULT_BACKEND
+        value: rpc://
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        value: smtp.sendgrid.net
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        value: noreply@travelapp.com
+
+# Optional managed PostgreSQL database reference
+databases:
+  - name: alx-travel-db
+    plan: basic
